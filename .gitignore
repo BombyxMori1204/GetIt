@@ -4,3 +4,4 @@ apps/server/data/
 .expo/
 dist/
 *.apk
+data/

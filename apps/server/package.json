@@ -7,7 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "probe": "tsx src/scripts/probe.ts probe-urls.txt"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
@@ -26,6 +27,7 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.3",
     "drizzle-kit": "^0.31.11",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }
