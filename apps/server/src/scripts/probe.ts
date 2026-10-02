@@ -234,16 +234,23 @@ async function main(): Promise<void> {
 
   mkdirSync(OUT_DIR, { recursive: true });
 
+  const cdpUrl = process.env.PROBE_CDP; // например http://127.0.0.1:9222
   const useRealChrome = process.env.PROBE_CHROME === '1';
-  const browser = await chromium.launch({
+
+  const browser = cdpUrl
+  ? await chromium.connectOverCDP(cdpUrl)
+  : await chromium.launch({
     headless: !useRealChrome,
     ...(useRealChrome ? { channel: 'chrome' as const } : {}),
   });
-  // Один контекст на все ссылки: cookie сохраняются между страницами
-  const context = await browser.newContext({
+
+  // В режиме CDP берём уже существующий контекст вашего Chrome (с вашими куками)
+  const context = cdpUrl
+  ? (browser.contexts()[0] ?? (await browser.newContext()))
+  : await browser.newContext({
     locale: 'ru-RU',
     ...(useRealChrome ? {} : { userAgent: UA }),
-  });
+    });
 
   const rows: ProbeRow[] = [];
 
@@ -251,10 +258,12 @@ async function main(): Promise<void> {
     const site = new URL(url).hostname.replace(/^www\./, '');
     console.log(`[${i + 1}/${urls.length}] ${url}`);
 
-    const viaFetch = await loadWithFetch(url);
-    writeFileSync(join(OUT_DIR, `${site}-${i}-fetch.html`), viaFetch.html);
-    rows.push(makeRow(site, 'fetch', viaFetch, extract(viaFetch.html)));
-    await politePause();
+    if (!cdpUrl) {
+        const viaFetch = await loadWithFetch(url);
+        writeFileSync(join(OUT_DIR, `${site}-${i}-fetch.html`), viaFetch.html);
+        rows.push(makeRow(site, 'fetch', viaFetch, extract(viaFetch.html)));
+        await politePause();
+    }
 
     const viaBrowser = await loadWithBrowser(context, url);
     writeFileSync(join(OUT_DIR, `${site}-${i}-playwright.html`), viaBrowser.html);
