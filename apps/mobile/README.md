@@ -48,3 +48,14 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Запуск
+
+## Запуск Хрома
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\MAIN\chrome-probe-profile" 
+
+## Запуск парсера
+cd C:\MAIN\Programming\VKR\apps\server
+>> $env:PROBE_CDP="http://127.0.0.1:9222"
+>> npx tsx src/scripts/probe.ts probe-urls.txt
+>> Remove-Item Env:PROBE_CDP
