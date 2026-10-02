@@ -161,9 +161,13 @@ async function loadWithFetch(url: string): Promise<Loaded> {
     });
     const html = await res.text();
     return { status: res.status, html, ms: Date.now() - t0 };
-  } catch (e) {
+    } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { status: `ERR: ${msg}`, html: '', ms: Date.now() - t0 };
+    const cause =
+      e instanceof Error && e.cause instanceof Error
+        ? ` (${(e.cause as NodeJS.ErrnoException).code ?? e.cause.message})`
+        : '';
+    return { status: `ERR: ${msg}${cause}`, html: '', ms: Date.now() - t0 };
   }
 }
 
@@ -175,7 +179,7 @@ async function loadWithBrowser(
   const page = await context.newPage();
   try {
     const res = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
-    await page.waitForTimeout(4000); // даём JS дорисовать цену
+    await page.waitForTimeout(Number(process.env.PROBE_WAIT_MS ?? 4000));
     const html = await page.content();
     return { status: res?.status() ?? 'no-response', html, ms: Date.now() - t0 };
   } catch (e) {
@@ -230,9 +234,16 @@ async function main(): Promise<void> {
 
   mkdirSync(OUT_DIR, { recursive: true });
 
-  const browser = await chromium.launch({ headless: true });
+  const useRealChrome = process.env.PROBE_CHROME === '1';
+  const browser = await chromium.launch({
+    headless: !useRealChrome,
+    ...(useRealChrome ? { channel: 'chrome' as const } : {}),
+  });
   // Один контекст на все ссылки: cookie сохраняются между страницами
-  const context = await browser.newContext({ locale: 'ru-RU', userAgent: UA });
+  const context = await browser.newContext({
+    locale: 'ru-RU',
+    ...(useRealChrome ? {} : { userAgent: UA }),
+  });
 
   const rows: ProbeRow[] = [];
 
